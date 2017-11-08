@@ -1,16 +1,118 @@
-﻿namespace Sitecore.Support.Shell.Applications.Dialogs.Progress
-{
-    using Sitecore.Diagnostics;
-    using Sitecore.Globalization;
-    using Sitecore.Jobs;
-    using Sitecore.Resources;
-    using Sitecore.Web.UI;
-    using Sitecore.Web.UI.Sheer;
-    using System.Collections.Specialized;
+﻿using Sitecore.Diagnostics;
+using Sitecore.Globalization;
+using Sitecore.Jobs;
+using Sitecore.Resources;
+using Sitecore.Shell.Framework.Jobs;
+using Sitecore.Web.UI;
+using Sitecore.Web.UI.HtmlControls;
+using Sitecore.Web.UI.Sheer;
+using Sitecore.Web.UI.XamlSharp.Xaml;
+using System;
+using System.Collections.Specialized;
+using System.Globalization;
 
-    public class ProgressPage : Sitecore.Shell.Applications.Dialogs.Progress.ProgressPage
+namespace Sitecore.Shell.Applications.Dialogs.Progress
+{
+    /// <summary>
+    /// Progress dialog page.
+    /// </summary>
+    public class ProgressPage : XamlMainControl
     {
-        protected new void CheckStatus()
+        /// <summary></summary>
+        protected Button Close;
+
+        /// <summary></summary>
+        protected Literal HeaderText;
+
+        /// <summary></summary>
+        protected Image HeaderSpacer;
+
+        /// <summary></summary>
+        protected ThemedImage Icon;
+
+        /// <summary></summary>
+        protected Literal Log;
+
+        /// <summary></summary>
+        protected Literal MoreInformation;
+
+        /// <summary></summary>
+        protected Border MoreInformationContainer;
+
+        /// <summary></summary>
+        protected ThemedImage MoreImage;
+
+        /// <summary></summary>
+        protected Border Progress;
+
+        /// <summary></summary>
+        protected Image ProgressSpacer;
+
+        /// <summary></summary>
+        protected Image FooterSpacer;
+
+        /// <summary></summary>
+        protected Literal Subtitle;
+
+        /// <summary></summary>
+        protected Literal Title;
+
+        /// <summary></summary>
+        protected ThemedImage TitleIcon;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this <see cref="T:Sitecore.Shell.Applications.Dialogs.Progress.ProgressPage" /> is expanded.
+        /// </summary>
+        /// <value><c>true</c> if expanded; otherwise, <c>false</c>.</value>
+        protected bool Expanded
+        {
+            get
+            {
+                return MainUtil.GetBool(this.ViewState["Expanded"], false);
+            }
+            set
+            {
+                this.ViewState["Expanded"] = (value ? "1" : "0");
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the handle.
+        /// </summary>
+        /// <value>The handle.</value>
+        protected Handle Handle
+        {
+            get
+            {
+                return Handle.Parse(StringUtil.GetString(this.ViewState["Handle"]));
+            }
+            set
+            {
+                Assert.ArgumentNotNull(value, "value");
+                this.ViewState["Handle"] = value.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the last index of the updated message.
+        /// </summary>
+        /// <value>The last index of the updated message.</value>
+        protected int LastUpdatedMessageIndex
+        {
+            get
+            {
+                return MainUtil.GetInt(this.ViewState["LastUpdatedMessageIndex"], 0);
+            }
+            set
+            {
+                this.ViewState["LastUpdatedMessageIndex"] = value;
+            }
+        }
+
+        /// <summary>
+        /// Checks the status.
+        /// </summary>
+        protected void CheckStatus()
         {
             Job job = JobManager.GetJob(this.Handle);
             Assert.IsNotNull(job, "job in checkstatus");
@@ -29,40 +131,87 @@
             this.UpdateFactor(factor);
             this.UpdateStatus(job);
             SheerResponse.Timer("CheckStatus", 500);
-        }        
+        }
 
         /// <summary>
-        /// Updates the specified status text.
+        /// Handles the Close_ click event.
+        /// </summary>
+        protected void Close_Click()
+        {
+            Job job = this.GetJob();
+            if (job != null)
+            {
+                job.Status.Expiry = System.DateTime.Now.AddMinutes(1.0);
+            }
+            SheerResponse.SetDialogValue("Manual close");
+            SheerResponse.CloseWindow();
+        }
+
+        /// <summary>
+        /// Handles the More information_ click event.
+        /// </summary>
+        protected void ToggleInformation()
+        {
+            Job job = this.GetJob();
+            Assert.IsNotNull(job, "job");
+            if (job.Status.Failed)
+            {
+                this.ShowException(job);
+                return;
+            }
+            this.MoreInformation.Text = (this.Expanded ? Translate.Text("View all messages") : Translate.Text("Hide messages"));
+            this.Expanded = !this.Expanded;
+            SheerResponse.Eval("toggle()");
+        }
+
+        /// <summary>
+        /// Shows the exception.
         /// </summary>
         /// <param name="job">The job.</param>
-        private void UpdateStatus(Job job)
+        private void ShowException(Job job)
         {
-            Assert.ArgumentNotNull(job, "job");
-            string text = string.Empty;
-            StringCollection messages = job.Status.Messages;
-            if (messages.Count > 0)
+            string text = "An error occured.";
+            if (job.Status.Messages.Count > 0)
             {
-                text = messages[messages.Count - 1];
+                bool flag;
+                text = this.GetLastJobErrorMessage(job, out flag);
             }
-            this.Title.Text = text;
-            SheerResponse.SetAttribute("Title", "title", text);
-            if (!this.Expanded)
+            text = "<h2> <i>An error occured.</i></h2><br />" + text;
+            SheerResponse.SetAttribute("ErrorMessage", "value", text);
+            SheerResponse.Eval("showException()");
+        }
+
+        /// <summary>
+        /// Raises the <see cref="E:System.Web.UI.Control.Load"></see> event.
+        /// </summary>
+        /// <param name="e">The <see cref="T:System.EventArgs"></see> object that contains the event data.</param>
+        protected override void OnLoad(System.EventArgs e)
+        {
+            Assert.ArgumentNotNull(e, "e");
+            base.OnLoad(e);
+            if (XamlControl.AjaxScriptManager.IsEvent)
             {
                 return;
             }
-            string[] array;
-            //sitecore.support.95200. here we implement count instead of messages.Count not to get messages.Count value increased during the FOR loop for the trees with big number of subitems
-            int count = messages.Count;
-            lock (messages)
+            this.MoreInformation.Text = Translate.Text("View all messages");
+            LongRunningOptions longRunningOptions = LongRunningOptions.Parse();
+            this.Handle = Handle.Parse(longRunningOptions.Handle);
+            this.HeaderText.Text = longRunningOptions.Title;
+            if (!string.IsNullOrEmpty(longRunningOptions.Icon))
             {
-                array = new string[count - this.LastUpdatedMessageIndex];
-                for (int i = this.LastUpdatedMessageIndex; i < count; i++)
-                {
-                    array[i - this.LastUpdatedMessageIndex] = messages[i];
-                }
+                this.Icon.Src = longRunningOptions.Icon;
             }
-            this.LastUpdatedMessageIndex = count;
-            SheerResponse.Eval(new ScriptInvokationBuilder("appendLog").AddString(StringUtil.Join(array, "<br />") + "<br />", new object[0]).ToString());
+            Job job = JobManager.GetJob(this.Handle);
+            Assert.IsNotNull(job, "job");
+        }
+
+        /// <summary>
+        /// Gets the job.
+        /// </summary>
+        /// <returns>The job.</returns>
+        private Job GetJob()
+        {
+            return JobManager.GetJob(this.Handle);
         }
 
         /// <summary>
@@ -104,6 +253,48 @@
         }
 
         /// <summary>
+        /// Updates the factor.
+        /// </summary>
+        /// <param name="factor">The factor.</param>
+        private void UpdateFactor(string factor)
+        {
+            Assert.ArgumentNotNullOrEmpty(factor, "factor");
+            SheerResponse.Eval(new ScriptInvokationBuilder("progressTo").AddString(factor, new object[0]).ToString());
+        }
+
+        /// <summary>
+        /// Updates the specified status text.
+        /// </summary>
+        /// <param name="job">The job.</param>
+        private void UpdateStatus(Job job)
+        {
+            Assert.ArgumentNotNull(job, "job");
+            string text = string.Empty;
+            StringCollection messages = job.Status.Messages;
+            if (messages.Count > 0)
+            {
+                text = messages[messages.Count - 1];
+            }
+            this.Title.Text = text;
+            SheerResponse.SetAttribute("Title", "title", text);
+            if (!this.Expanded)
+            {
+                return;
+            }
+            string[] array;
+            lock (messages)
+            {
+                array = new string[messages.Count - this.LastUpdatedMessageIndex];
+                for (int i = this.LastUpdatedMessageIndex; i < messages.Count; i++)
+                {
+                    array[i - this.LastUpdatedMessageIndex] = messages[i];
+                }
+            }
+            this.LastUpdatedMessageIndex = messages.Count;
+            SheerResponse.Eval(new ScriptInvokationBuilder("appendLog").AddString(StringUtil.Join(array, "<br />") + "<br />", new object[0]).ToString());
+        }
+
+        /// <summary>
         /// Clips the specified text.
         /// </summary>
         /// <param name="text">The text.</param>
@@ -117,16 +308,6 @@
                 text = text.Substring(0, limit) + "...";
             }
             return text;
-        }
-
-        /// <summary>
-        /// Updates the factor.
-        /// </summary>
-        /// <param name="factor">The factor.</param>
-        private void UpdateFactor(string factor)
-        {
-            Assert.ArgumentNotNullOrEmpty(factor, "factor");
-            SheerResponse.Eval(new ScriptInvokationBuilder("progressTo").AddString(factor, new object[0]).ToString());
         }
 
         /// <summary>

@@ -63,7 +63,7 @@
     <None Include="web.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="sitecore\shell\applications\dialogs\progress\ProgressDialog.xaml.xml" />
+    <Content Include="sitecore\shell\Applications\Dialogs\Progress\ProgressDialog.xaml.xml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

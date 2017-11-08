@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?> 
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <xamlControls
   xmlns:x="http://www.sitecore.net/xaml"
   xmlns:ajax="http://www.sitecore.net/ajax"
@@ -11,7 +11,7 @@
   xmlns:html="http://www.sitecore.net/microsoft/htmlcontrols"
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
-  <Sitecore.Shell.Applications.Dialogs.Progress x:inherits="Sitecore.Support.Shell.Applications.Dialogs.Progress.ProgressPage,Sitecore.Support.95200">
+  <Sitecore.Shell.Applications.Dialogs.Progress x:inherits="Sitecore.Shell.Applications.Dialogs.Progress.ProgressPage,Sitecore.Client">
     <x:param name="Text" value="Starting..." />
     <x:using namespace="Sitecore.Controls" />
 
@@ -24,7 +24,7 @@
       <Stylesheet runat="server" Src="/sitecore/shell/applications/dialogs/progress/ProgressDialog.css" x:placeholder="Stylesheets"/>
 
       <input type="hidden" ID="ErrorMessage" />
-      
+
       <div class="scFlexColumnContainer" style="background: white;">
         <div>
           <div  style="2px 16px 0px 0px" >
@@ -50,7 +50,7 @@
           </div>
 
           <Image runat="server" ID="ProgressSpacer" Src="/sitecore/images/blank.gif" width="1" height="12" alt="" border="0"/>
-          
+
           <Border runat="server" ID="Progress">
 
             <img src="/sitecore/shell/themes/standard/Images/Progress/background_left.png" id="progressBackgroundLeft"/>
