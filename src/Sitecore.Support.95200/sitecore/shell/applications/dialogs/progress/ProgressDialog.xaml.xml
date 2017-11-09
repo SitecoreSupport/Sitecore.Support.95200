@@ -11,7 +11,7 @@
   xmlns:html="http://www.sitecore.net/microsoft/htmlcontrols"
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
-  <Sitecore.Shell.Applications.Dialogs.Progress x:inherits="Sitecore.Shell.Applications.Dialogs.Progress.ProgressPage,Sitecore.Client">
+  <Sitecore.Shell.Applications.Dialogs.Progress x:inherits="Sitecore.Support.Shell.Applications.Dialogs.Progress.ProgressPage,Sitecore.Support.95200">
     <x:param name="Text" value="Starting..." />
     <x:using namespace="Sitecore.Controls" />
 
